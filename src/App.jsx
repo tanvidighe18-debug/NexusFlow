@@ -12,19 +12,17 @@ import {
 import '@xyflow/react/dist/style.css'
 import './App.css'
 
-// Turbine Sensor Custom Node
+// Turbine Sensor Node
 function TurbineSensorNode({ data }) {
   return (
-    <div
-      style={{
-        padding: '15px',
-        border: '2px solid #2585a5',
-        borderRadius: '10px',
-        background: '#ffffff',
-        width: '210px',
-        boxShadow: '0 3px 10px rgba(0,0,0,0.1)',
-      }}
-    >
+    <div style={{
+      padding: '15px',
+      border: '2px solid #2585a5',
+      borderRadius: '10px',
+      background: '#fff',
+      width: '210px',
+      boxShadow: '0 3px 10px rgba(0,0,0,0.1)',
+    }}>
       <Handle type="target" position={Position.Left} />
 
       <h3 style={{ margin: '0 0 10px', color: '#2585a5' }}>
@@ -43,8 +41,52 @@ function TurbineSensorNode({ data }) {
   )
 }
 
+// Moving Average Threshold Filter Node
+function MovingAverageNode({ data }) {
+  const readings = [20, 22, 24, 26, 28]
+
+  const average =
+    readings.reduce((sum, value) => sum + value, 0) /
+    readings.length
+
+  const threshold = 23
+  const isAlert = average > threshold
+
+  return (
+    <div style={{
+      padding: '15px',
+      border: '2px solid #2585a5',
+      borderRadius: '10px',
+      background: '#fff',
+      width: '230px',
+      boxShadow: '0 3px 10px rgba(0,0,0,0.1)',
+    }}>
+      <Handle type="target" position={Position.Left} />
+
+      <h3 style={{ margin: '0 0 10px', color: '#2585a5' }}>
+        {data.label}
+      </h3>
+
+      <div style={{ fontSize: '13px', lineHeight: '1.8' }}>
+        <div>📊 Readings: {readings.join(', ')}</div>
+        <div>📈 Moving Average: {average.toFixed(2)}</div>
+        <div>🎯 Threshold: {threshold}</div>
+        <div style={{
+          color: isAlert ? 'red' : 'green',
+          fontWeight: 'bold',
+        }}>
+          Status: {isAlert ? '🔴 Alert' : '🟢 Normal'}
+        </div>
+      </div>
+
+      <Handle type="source" position={Position.Right} />
+    </div>
+  )
+}
+
 const nodeTypes = {
   turbineSensor: TurbineSensorNode,
+  movingAverage: MovingAverageNode,
 }
 
 const initialNodes = [
@@ -77,6 +119,7 @@ function App() {
     if (!type) return
 
     const bounds = event.currentTarget.getBoundingClientRect()
+
     const position = {
       x: event.clientX - bounds.left,
       y: event.clientY - bounds.top,
@@ -86,22 +129,20 @@ function App() {
       ...nds,
       {
         id: `${Date.now()}`,
-        type: type === 'turbineSensor' ? 'turbineSensor' : 'default',
+        type,
         position,
         data: {
-          label: type === 'turbineSensor'
-            ? 'Turbine Sensor'
-            : 'New Node',
+          label:
+            type === 'turbineSensor'
+              ? 'Turbine Sensor'
+              : 'Moving Average Filter',
         },
       },
     ])
   }, [setNodes])
 
-  const onDragStart = (event) => {
-    event.dataTransfer.setData(
-      'application/reactflow',
-      'turbineSensor'
-    )
+  const onDragStart = (event, type) => {
+    event.dataTransfer.setData('application/reactflow', type)
     event.dataTransfer.effectAllowed = 'move'
   }
 
@@ -109,15 +150,19 @@ function App() {
     <div style={{ width: '100%', height: '100vh' }}>
       <h2>Nexus Flow</h2>
 
-      <aside style={{ padding: '10px' }}>
+      <aside style={{
+        padding: '10px',
+        display: 'flex',
+        gap: '12px',
+        flexWrap: 'wrap',
+      }}>
         <div
           draggable
-          onDragStart={onDragStart}
+          onDragStart={(event) => onDragStart(event, 'turbineSensor')}
           style={{
             padding: '12px',
             border: '1px solid #2585a5',
             borderRadius: '8px',
-            width: '190px',
             cursor: 'grab',
             background: '#e5f5fa',
             color: '#17647d',
@@ -125,6 +170,22 @@ function App() {
           }}
         >
           + Data Source (Turbine Sensor)
+        </div>
+
+        <div
+          draggable
+          onDragStart={(event) => onDragStart(event, 'movingAverage')}
+          style={{
+            padding: '12px',
+            border: '1px solid #2585a5',
+            borderRadius: '8px',
+            cursor: 'grab',
+            background: '#e5f5fa',
+            color: '#17647d',
+            fontWeight: 'bold',
+          }}
+        >
+          + Math/Filter (Moving Average)
         </div>
       </aside>
 
