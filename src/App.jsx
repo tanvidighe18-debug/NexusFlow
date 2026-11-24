@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import {
   ReactFlow,
   Background,
@@ -84,9 +84,119 @@ function MovingAverageNode({ data }) {
   )
 }
 
+// Action SMS Alert Node
+function SMSAlertNode({ data }) {
+  const [mobile, setMobile] = useState('')
+  const [message, setMessage] = useState(
+    'Warning! Turbine sensor threshold exceeded.'
+  )
+  const [status, setStatus] = useState('Pending')
+
+  const sendSMS = () => {
+    if (!/^\d{10}$/.test(mobile)) {
+      setStatus('Enter valid 10-digit number')
+      return
+    }
+
+    if (!message.trim()) {
+      setStatus('Enter SMS message')
+      return
+    }
+
+    setStatus('Demo Sent Successfully')
+  }
+
+  return (
+    <div style={{
+      padding: '15px',
+      border: '2px solid #d97706',
+      borderRadius: '10px',
+      background: '#fff',
+      width: '240px',
+      boxShadow: '0 3px 10px rgba(0,0,0,0.1)',
+    }}>
+      <Handle type="target" position={Position.Left} />
+
+      <h3 style={{ margin: '0 0 10px', color: '#d97706' }}>
+        📩 {data.label}
+      </h3>
+
+      <div style={{
+        fontSize: '13px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+      }}>
+        <label>📱 Mobile Number</label>
+
+        <input
+          type="tel"
+          placeholder="Enter 10-digit number"
+          value={mobile}
+          onChange={(e) => {
+            setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))
+            setStatus('Pending')
+          }}
+          onKeyDown={(e) => e.stopPropagation()}
+          style={{
+            padding: '8px',
+            border: '1px solid #ccc',
+            borderRadius: '5px',
+            width: '100%',
+            boxSizing: 'border-box',
+          }}
+        />
+
+        <label>💬 SMS Message</label>
+
+        <textarea
+          value={message}
+          onChange={(e) => {
+            setMessage(e.target.value)
+            setStatus('Pending')
+          }}
+          onKeyDown={(e) => e.stopPropagation()}
+          rows={3}
+          style={{
+            padding: '8px',
+            border: '1px solid #ccc',
+            borderRadius: '5px',
+            resize: 'vertical',
+            width: '100%',
+            boxSizing: 'border-box',
+          }}
+        />
+
+        <div style={{ fontWeight: 'bold' }}>
+          Status: {status}
+        </div>
+
+        <button
+          onClick={sendSMS}
+          onKeyDown={(e) => e.stopPropagation()}
+          style={{
+            padding: '9px',
+            background: '#d97706',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+          }}
+        >
+          Send SMS
+        </button>
+      </div>
+
+      <Handle type="source" position={Position.Right} />
+    </div>
+  )
+}
+
 const nodeTypes = {
   turbineSensor: TurbineSensorNode,
   movingAverage: MovingAverageNode,
+  smsAlert: SMSAlertNode,
 }
 
 const initialNodes = [
@@ -125,6 +235,12 @@ function App() {
       y: event.clientY - bounds.top,
     }
 
+    const labels = {
+      turbineSensor: 'Turbine Sensor',
+      movingAverage: 'Moving Average Filter',
+      smsAlert: 'Action (SMS Alert)',
+    }
+
     setNodes((nds) => [
       ...nds,
       {
@@ -132,10 +248,7 @@ function App() {
         type,
         position,
         data: {
-          label:
-            type === 'turbineSensor'
-              ? 'Turbine Sensor'
-              : 'Moving Average Filter',
+          label: labels[type],
         },
       },
     ])
@@ -144,6 +257,16 @@ function App() {
   const onDragStart = (event, type) => {
     event.dataTransfer.setData('application/reactflow', type)
     event.dataTransfer.effectAllowed = 'move'
+  }
+
+  const paletteStyle = {
+    padding: '12px',
+    border: '1px solid #2585a5',
+    borderRadius: '8px',
+    cursor: 'grab',
+    background: '#e5f5fa',
+    color: '#17647d',
+    fontWeight: 'bold',
   }
 
   return (
@@ -159,15 +282,7 @@ function App() {
         <div
           draggable
           onDragStart={(event) => onDragStart(event, 'turbineSensor')}
-          style={{
-            padding: '12px',
-            border: '1px solid #2585a5',
-            borderRadius: '8px',
-            cursor: 'grab',
-            background: '#e5f5fa',
-            color: '#17647d',
-            fontWeight: 'bold',
-          }}
+          style={paletteStyle}
         >
           + Data Source (Turbine Sensor)
         </div>
@@ -175,17 +290,22 @@ function App() {
         <div
           draggable
           onDragStart={(event) => onDragStart(event, 'movingAverage')}
-          style={{
-            padding: '12px',
-            border: '1px solid #2585a5',
-            borderRadius: '8px',
-            cursor: 'grab',
-            background: '#e5f5fa',
-            color: '#17647d',
-            fontWeight: 'bold',
-          }}
+          style={paletteStyle}
         >
           + Math/Filter (Moving Average)
+        </div>
+
+        <div
+          draggable
+          onDragStart={(event) => onDragStart(event, 'smsAlert')}
+          style={{
+            ...paletteStyle,
+            border: '1px solid #d97706',
+            background: '#fff7ed',
+            color: '#c2410c',
+          }}
+        >
+          + Action (SMS Alert)
         </div>
       </aside>
 
