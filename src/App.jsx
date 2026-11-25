@@ -216,6 +216,30 @@ function App() {
     (params) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   )
+  const handleSaveGraph = useCallback(() => {
+    const graphData = {
+      nodes,
+      edges,
+    }
+
+    const json = JSON.stringify(graphData, null, 2)
+
+    const blob = new Blob([json], {
+      type: 'application/json',
+    })
+
+    const url = URL.createObjectURL(blob)
+
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'nexusflow-graph.json'
+
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    URL.revokeObjectURL(url)
+  }, [nodes, edges])
 
   const onDragOver = useCallback((event) => {
     event.preventDefault()
@@ -307,6 +331,20 @@ function App() {
         >
           + Action (SMS Alert)
         </div>
+        <button
+          onClick={handleSaveGraph}
+          style={{
+            padding: '12px',
+            border: 'none',
+            borderRadius: '8px',
+            background: '#2585a5',
+            color: '#fff',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+          }}
+        >
+          Save Graph JSON
+        </button>
       </aside>
 
       <div style={{ width: '100%', height: '80vh' }}>
