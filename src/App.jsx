@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useRef } from 'react'
 import {
   ReactFlow,
   Background,
@@ -211,11 +211,14 @@ const initialNodes = [
 function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
+  const fileInputRef = useRef(null)
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   )
+
+  // Save Graph as JSON
   const handleSaveGraph = useCallback(() => {
     const graphData = {
       nodes,
@@ -240,6 +243,52 @@ function App() {
 
     URL.revokeObjectURL(url)
   }, [nodes, edges])
+
+  // Load Graph from JSON
+  const handleLoadGraph = (event) => {
+    const file = event.target.files[0]
+
+    if (!file) return
+
+    const reader = new FileReader()
+
+    reader.onload = (e) => {
+      try {
+        const graphData = JSON.parse(e.target.result)
+
+        if (
+          !Array.isArray(graphData.nodes) ||
+          !Array.isArray(graphData.edges)
+        ) {
+          alert('Invalid graph JSON')
+          return
+        }
+
+        const nodeIds = graphData.nodes.map((node) => node.id)
+
+        const validEdges = graphData.edges.every(
+          (edge) =>
+            nodeIds.includes(edge.source) &&
+            nodeIds.includes(edge.target)
+        )
+
+        if (!validEdges) {
+          alert('Invalid connections in graph')
+          return
+        }
+
+        setNodes(graphData.nodes)
+        setEdges(graphData.edges)
+
+        alert('Graph loaded successfully!')
+      } catch {
+        alert('Invalid JSON file')
+      }
+    }
+
+    reader.readAsText(file)
+    event.target.value = ''
+  }
 
   const onDragOver = useCallback((event) => {
     event.preventDefault()
@@ -331,6 +380,7 @@ function App() {
         >
           + Action (SMS Alert)
         </div>
+
         <button
           onClick={handleSaveGraph}
           style={{
@@ -344,6 +394,18 @@ function App() {
           }}
         >
           Save Graph JSON
+        </button>
+
+        <input
+          type="file"
+          accept=".json"
+          ref={fileInputRef}
+          onChange={handleLoadGraph}
+          style={{ display: 'none' }}
+        />
+
+        <button onClick={() => fileInputRef.current.click()}>
+          Load Graph JSON
         </button>
       </aside>
 
