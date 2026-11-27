@@ -240,6 +240,9 @@ function App() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+    console.log('Graph saved successfully')
+console.log('Nodes:', nodes.length)
+console.log('Edges:', edges.length)
 
     URL.revokeObjectURL(url)
   }, [nodes, edges])
@@ -279,6 +282,9 @@ function App() {
 
         setNodes(graphData.nodes)
         setEdges(graphData.edges)
+        console.log('Graph loaded successfully')
+console.log('Nodes:', graphData.nodes.length)
+console.log('Edges:', graphData.edges.length)
 
         alert('Graph loaded successfully!')
       } catch {
