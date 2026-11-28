@@ -220,6 +220,18 @@ function App() {
 
   // Save Graph as JSON
   const handleSaveGraph = useCallback(() => {
+    const nodeIds = new Set(nodes.map((node) => node.id))
+
+    const hasInvalidEdge = edges.some(
+      (edge) =>
+        !nodeIds.has(edge.source) ||
+        !nodeIds.has(edge.target)
+    )
+
+    if (hasInvalidEdge) {
+      alert('Cannot save: Invalid graph connections')
+      return
+    }
     const graphData = {
       nodes,
       edges,
